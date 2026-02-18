@@ -29,4 +29,12 @@ client.once('ready', () => {
 });
 
 client.login(process.env.DISCORD_TOKEN);
+
+// Graceful shutdown — prevents Railway from reporting SIGTERM as a crash
+process.on('SIGTERM', () => {
+    console.log('Received SIGTERM, shutting down gracefully...');
+    client.destroy();
+    process.exit(0);
+});
+
 module.exports = client;
