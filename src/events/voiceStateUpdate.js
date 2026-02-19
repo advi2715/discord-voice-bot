@@ -21,27 +21,41 @@ module.exports = {
                 try {
                     // Check if category exists
                     const category = settings.category_id ? guild.channels.cache.get(settings.category_id) : null;
+                    const { allowed_role_id } = settings;
 
-                    // Create new channel
+                    const permissionOverwrites = [
+                        {
+                            id: user.id,
+                            allow: [PermissionFlagsBits.ManageChannels, PermissionFlagsBits.MoveMembers, PermissionFlagsBits.Connect],
+                        },
+                        {
+                            id: newState.client.user.id,
+                            allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages, PermissionFlagsBits.Connect, PermissionFlagsBits.ManageChannels],
+                        }
+                    ];
+
+                    if (allowed_role_id) {
+                        permissionOverwrites.push({
+                            id: guild.id,
+                            deny: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.Connect],
+                        });
+                        permissionOverwrites.push({
+                            id: allowed_role_id,
+                            allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.Connect],
+                        });
+                    } else {
+                        permissionOverwrites.push({
+                            id: guild.id,
+                            allow: [PermissionFlagsBits.Connect],
+                        });
+                    }
+
                     const newChannel = await guild.channels.create({
                         name: `${user.username}'s Channel`,
                         type: ChannelType.GuildVoice,
                         parent: category ? category.id : null,
                         userLimit: 25,
-                        permissionOverwrites: [
-                            {
-                                id: user.id,
-                                allow: [PermissionFlagsBits.ManageChannels, PermissionFlagsBits.MoveMembers, PermissionFlagsBits.Connect],
-                            },
-                            {
-                                id: guild.id,
-                                allow: [PermissionFlagsBits.Connect], // Allow everyone to connect by default
-                            },
-                            {
-                                id: newState.client.user.id,
-                                allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages, PermissionFlagsBits.Connect, PermissionFlagsBits.ManageChannels],
-                            }
-                        ]
+                        permissionOverwrites
                     });
 
                     // Save to DB
